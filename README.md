@@ -6,7 +6,7 @@ Program that collects the motion information of bridge and measures the position
 
 This program is executed once every hour and the result is stored in oracle DB.
 
-위 프로그램은 한 시간마다 한 번씩 실행되고, 결괏값은 oracle DB로 저장합니다.
+위 프로그램은 한 시간마다 한 번씩 실행되고, 결괏값은 oracle DB로 저장합니다. (현재는 테스트를 위해 30초마다 1회 실행되며, 결과값은 출력합니다.)
 
 ## Requirements
 
