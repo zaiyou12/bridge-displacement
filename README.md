@@ -25,3 +25,11 @@ You can modify the variable in `setting.env` to fit the image.
 - `refernce_distance`: Distance between first two points.
 - `x1_start, x1_end`: X coordinate range point of point 1. To recognize an image as a matrix, the x-coordinate is calculated from the top-left of the picture to the bottom left. If the range is too large, the result may be inaccurate.
 - `y1_start, y1_end`: Y coordinate range point of point 1. The y-coordinate is calculated from the top-left of the picture to the top-right. Also, if the range is too large, the result may be inaccurate.
+
+## Getting started
+
+```bash
+python run.py
+```
+
+![Image of testing](test-result.png)
