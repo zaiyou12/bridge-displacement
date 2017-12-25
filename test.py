@@ -2,8 +2,9 @@ import os
 import glob
 from datetime import datetime
 
-from apscheduler.schedulers.blocking import BlockingScheduler
 import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.patches as patches
 from skimage import io
 from skimage.transform import hough_ellipse
 from skimage.feature import canny
@@ -101,13 +102,21 @@ def get_distance():
         result = delta / np.linalg.norm(v1)  # ratio of the current distance to the reference distance
         print(datetime.now(), 'The result is', result)
 
+        # show image
+        image = io.imread(file_url)
+        fig, ax = plt.subplots(1)
+        ax.imshow(image)
+        rect1 = patches.Rectangle((y1_start, x1_start), y1_end - y1_start, x1_end - x1_start, linewidth=1,
+                                  edgecolor='r', facecolor='none')
+        rect2 = patches.Rectangle((y2_start, x2_start), y2_end - y2_start, x2_end - x2_start, linewidth=1,
+                                  edgecolor='g', facecolor='none')
+        rect3 = patches.Rectangle((y3_start, x3_start), y3_end - y3_start, x3_end - x3_start, linewidth=1,
+                                  edgecolor='b', facecolor='none')
+        ax.add_patch(rect1)
+        ax.add_patch(rect2)
+        ax.add_patch(rect3)
+        plt.show()
+
 
 if __name__ == '__main__':
-    scheduler = BlockingScheduler()
-    scheduler.add_job(get_distance, 'interval', seconds=30, next_run_time=datetime.now())
-    print('Press Ctrl+{0} to exit'.format('Break' if os.name == 'nt' else 'C'))
-
-    try:
-        scheduler.start()
-    except (KeyboardInterrupt, SystemExit):
-        pass
+    get_distance()

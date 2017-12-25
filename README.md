@@ -32,4 +32,12 @@ You can modify the variable in `setting.env` to fit the image.
 python run.py
 ```
 
-![Image of testing](test-result.png)
+![Image of run file](image/result-run.png)
+
+## Visualization test
+
+```bash
+python test.py
+```
+
+![Image of test file](image/result-test.png)
