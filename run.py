@@ -46,10 +46,13 @@ def get_file_from_db():
         "Select MSIS_SNSR_ID, SNSR_MSMN_GTHR_DTTM, IMG_FLNM, IMG_PATH_NM from T_AFMG_IMG_GTHR01L1 WHERE RFLC_YN='N'")
     for result in cur:
         cur_id, cur_time, filename, path = result
-        cur.execute("Insert into T_AFMG_DATA_ANALY01L1 (MSIS_SNSR_ID, JOB_STRT_DTTM, FSTTM_RGSR_ID,FSTTM_RGST_DTTM,LSTTM_MODFR_ID,LSTTM_ALTR_DTTM) value (" + str(cur_id) + ", " + str(cur_time) + ", ‘FST_USER01’, sysDATE, ‘FST_USER_01’, sysDATE )")
+        sql = "Insert into T_AFMG_DATA_ANALY01L1 (MSIS_SNSR_ID, JOB_STRT_DTTM, FSTTM_RGSR_ID,FSTTM_RGST_DTTM,LSTTM_MODFR_ID,LSTTM_ALTR_DTTM) values (:1, :2, 'FST_USER01', sysDATE, 'FST_USER_01', sysDATE )"
+        cur.execute(sql, (cur_id, cur_time))
         result = get_distance(os.path.join(path, filename))
-        cur.execute("Insert into T_AFMG_IMG_ANALY01L1 (MSIS_SNSR_ID, SNSR_MSMN_GTHR_DTTM, ATTFL_CRET_DTTM,SNSR_MSMN_VAL, FSTTM_RGSR_ID,FSTTM_RGST_DTTM,LSTTM_MODFR_ID,LSTTM_ALTR_DTTM value ( ‘MSIS_SNSR_ID’, ‘SNSR_MSMN_GTHR_DTTM’, sysDATE, " + str(result) + ", ‘FST_USER_01’, sysDATE, ‘FST_USER_01’, sysDATE )")
-        cur.execute("Update T_AFMG_DATA_ANALY01L1 set SUCS_YN =“Y”, LSTTM_MODFR_ID=“FST_USER01”,LSTTM_ALTR_DTTM= sysDATE) where MSIS_SNSR_ID=" + str(cur_id) + " and  JOB_STRT_DTTM =" + str(cur_time))
+        sql = "Insert into T_AFMG_IMG_ANALY01L1 (MSIS_SNSR_ID, SNSR_MSMN_GTHR_DTTM, ATTFL_CRET_DTTM, SNSR_MSMN_VAL, FSTTM_RGSR_ID,FSTTM_RGST_DTTM,LSTTM_MODFR_ID,LSTTM_ALTR_DTTM values ('MSIS_SNSR_ID', 'SNSR_MSMN_GTHR_DTTM', sysDATE, :1, 'USER_01', sysDATE, 'FST_USER_01', sysDATE )"
+        cur.execute(sql, (result))
+        sql = "Update T_AFMG_DATA_ANALY01L1 set SUCS_YN =“Y”, LSTTM_MODFR_ID=“FST_USER01”,LSTTM_ALTR_DTTM= sysDATE) where MSIS_SNSR_ID=:1 and  JOB_STRT_DTTM =:2"
+        cur.execute(sql, (cur_id, cur_time))
     cur.close()
     conn.close()
     pass
