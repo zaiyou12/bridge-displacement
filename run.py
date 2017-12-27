@@ -37,6 +37,19 @@ def initial_setting():
 #         return latest_file
 
 
+# DB에서 파일 불러오기
+def get_file_from_db():
+    pass
+    # logger.info(os.environ.get('db_path'))
+    # conn = cx_Oracle.connect(os.environ.get('db_path'))
+    # cur = conn.cursor()
+    # cur.execute("SELECT * from T_AFMG_IMG_GTHR01L1 WHERE RFLC_YN='N'")
+    # for result in cur:
+    #     print(result)
+    # cur.close()
+    # conn.close()
+
+
 # 이미지 내 원 인식
 def find_circle(image, x_start, y_start):
     # pre-processing
@@ -62,8 +75,6 @@ def find_circle(image, x_start, y_start):
 
 # 거리 계산하기
 def get_distance():
-    # update all variable
-    initial_setting()
     file_url = os.path.join(os.getcwd(), os.environ.get('file_url'))
     reference_distance = os.environ.get('reference_distance')
     x1_start = int(os.environ.get('x1_start'))
@@ -130,6 +141,8 @@ def set_log():
 
 if __name__ == '__main__':
     logger = set_log()
+    initial_setting()
+    get_file_from_db()
     get_distance()
     logger.info('===========================')
     # 스케줄 실행
