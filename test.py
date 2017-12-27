@@ -22,15 +22,15 @@ def initial_setting():
                 # print(var[0], '=', var[1])
 
 
-# 최근 파일 불러오기
-def get_latest_file(file_url):
-    list_of_files = glob.glob(file_url)
-    if not list_of_files:
-        print('File directory', file_url, 'is empty')
-        return None
-    else:
-        latest_file = max(list_of_files, key=os.path.getctime)
-        return latest_file
+# # 최근 파일 불러오기
+# def get_latest_file(file_url):
+#     list_of_files = glob.glob(file_url)
+#     if not list_of_files:
+#         print('File directory', file_url, 'is empty')
+#         return None
+#     else:
+#         latest_file = max(list_of_files, key=os.path.getctime)
+#         return latest_file
 
 
 # 이미지 내 원 인식
@@ -41,7 +41,7 @@ def find_circle(image, x_start, y_start, mask=False):
     if mask:
         mask = image > 0.1
         image[mask] = 1
-    image = canny(image, sigma=2.0, low_threshold=0.55, high_threshold=0.8)
+    image = canny(image, sigma=1.75, low_threshold=0.55, high_threshold=0.8)
     # Perform a hough Transform
     # The accuracy corresponds to the bin size of a major axis.
     # The value is chosen in order to get a single high accumulator.
@@ -63,7 +63,7 @@ def find_circle(image, x_start, y_start, mask=False):
 def get_distance():
     # update all variable
     initial_setting()
-    file_url = get_latest_file(os.environ.get('file_url'))
+    file_url = os.path.join(os.getcwd(), os.environ.get('file_url'))
     reference_distance = os.environ.get('reference_distance')
     x1_start = int(os.environ.get('x1_start'))
     x1_end = int(os.environ.get('x1_end'))
@@ -89,18 +89,18 @@ def get_distance():
         image_1 = io.imread(file_url)[x1_start:x1_end, y1_start:y1_end]
         image_2 = io.imread(file_url)[x2_start:x2_end, y2_start:y2_end]
         image_3 = io.imread(file_url)[x3_start:x3_end, y3_start:y3_end]
-        # find circles and get center of the circles
-        # 원과 원의 중심 찾기
-        yc1, xc1 = find_circle(image_1, x_start=x1_start, y_start=y1_start)
-        yc2, xc2 = find_circle(image_2, x_start=x2_start, y_start=y2_start)
-        yc3, xc3 = find_circle(image_3, x_start=x3_start, y_start=y3_start, mask=True)
-        # calculate distance
-        # 거리 계산
-        v1 = np.array([yc2, xc2]) - np.array([yc1, xc1])  # vector form point 1 to point 2
-        v2 = np.array([yc3, xc3]) - np.array([yc1, xc1])  # vector form point 1 to point 3
-        delta = np.vdot(v1, v2) / (np.linalg.norm(v1))  # get distance between point 1 and point 2
-        result = delta / np.linalg.norm(v1)  # ratio of the current distance to the reference distance
-        print(datetime.now(), 'The result is', result)
+        # # find circles and get center of the circles
+        # # 원과 원의 중심 찾기
+        # yc1, xc1 = find_circle(image_1, x_start=x1_start, y_start=y1_start)
+        # yc2, xc2 = find_circle(image_2, x_start=x2_start, y_start=y2_start)
+        # yc3, xc3 = find_circle(image_3, x_start=x3_start, y_start=y3_start, mask=True)
+        # # calculate distance
+        # # 거리 계산
+        # v1 = np.array([yc2, xc2]) - np.array([yc1, xc1])  # vector form point 1 to point 2
+        # v2 = np.array([yc3, xc3]) - np.array([yc1, xc1])  # vector form point 1 to point 3
+        # delta = np.vdot(v1, v2) / (np.linalg.norm(v1))  # get distance between point 1 and point 2
+        # result = delta / np.linalg.norm(v1)  # ratio of the current distance to the reference distance
+        # print(datetime.now(), 'The result is', result)
 
         # show image
         image = io.imread(file_url)
