@@ -43,14 +43,14 @@ def get_file_from_db():
     conn = cx_Oracle.connect(os.environ.get('db_path'))
     cur = conn.cursor()
     cur.execute(
-        "Select MSIS_SNSR_ID, SNSR_MSMN_GTHR_DTTM, IMG_FLNM, IMG_PATH_NM from T_AFMG_IMG_GTHR01L1 WHERE RFLC_YN='N'")
+        "Select MSMN_SEQ, MSIS_SNSR_ID, MSMN_GTHR_YEAR, MSMN_GTHR_MNTH, MSMN_GTHR_DAY, MSMN_GTHR_HH, MSMN_GTHR_MM, MSMN_GTHR_SS, IMG_FLNM, IMG_PATH_NM from T_AFMG_IMG_GTHR01L1 where RFLC_YN=‘N’ ")
     for result in cur:
-        cur_id, cur_time, filename, path = result
-        sql = "Insert into T_AFMG_DATA_ANALY01L1 (MSIS_SNSR_ID, JOB_STRT_DTTM, FSTTM_RGSR_ID,FSTTM_RGST_DTTM,LSTTM_MODFR_ID,LSTTM_ALTR_DTTM) values (:1, :2, 'FST_USER01', sysDATE, 'FST_USER_01', sysDATE )"
+        cur_seq, cur_id, cur_year, cur_month, cur_day, cur_hour, cur_minute, cur_second, cur_filename, cur_path = result
+        sql = "Insert into T_AFMG_DATA_ANALY01L1 (MSIS_SNSR_ID, JOB_STRT_DTTM, FSTTM_RGSR_ID,FSTTM_RGST_DTTM,LSTTM_MODFR_ID,LSTTM_ALTR_DTTM) values (:1, :2, 'USER', sysDATE, 'USER', sysDATE )"
         cur.execute(sql, (cur_id, cur_time))
         result = get_distance(os.path.join(path, filename))
-        sql = "Insert into T_AFMG_IMG_ANALY01L1 (MSIS_SNSR_ID, SNSR_MSMN_GTHR_DTTM, ATTFL_CRET_DTTM, SNSR_MSMN_VAL, FSTTM_RGSR_ID,FSTTM_RGST_DTTM,LSTTM_MODFR_ID,LSTTM_ALTR_DTTM values ('MSIS_SNSR_ID', 'SNSR_MSMN_GTHR_DTTM', sysDATE, :1, 'USER_01', sysDATE, 'FST_USER_01', sysDATE )"
-        cur.execute(sql, (result))
+        sql = "Insert into T_AFMG_IMG_ANLY01L1 (MSMN_SEQ,MSIS_SNSR_ID, MSMN_INSP_YEAR, MSMN_INSP_MNTH, MSMN_INSP_DAY, MSMN_INSP_HH, MSMN_INSP_MM, MSMN_INSP_SS, SNSR_MSMN_VAL, FSTTM_RGSR_ID,FSTTM_RGST_DTTM,LSTTM_MODFR_ID,LSTTM_ALTR_DTTM) values (:1,:2,:3,:4,:5,:6,:7,:8,:9,'USER',sysDATE,'USER', sysDATE"
+        cur.execute(sql, (cur_seq, cur_id, cur_year, cur_month, cur_day, cur_hour, cur_minute, cur_second, result))
         sql = "Update T_AFMG_DATA_ANALY01L1 set SUCS_YN =“Y”, LSTTM_MODFR_ID=“FST_USER01”,LSTTM_ALTR_DTTM= sysDATE) where MSIS_SNSR_ID=:1 and  JOB_STRT_DTTM =:2"
         cur.execute(sql, (cur_id, cur_time))
     cur.close()
