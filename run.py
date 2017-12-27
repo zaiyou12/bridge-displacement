@@ -6,6 +6,7 @@ from datetime import datetime
 
 from apscheduler.schedulers.blocking import BlockingScheduler
 import numpy as np
+import cx_Oracle
 from skimage import io
 from skimage.transform import hough_ellipse
 from skimage.feature import canny
@@ -39,15 +40,20 @@ def initial_setting():
 
 # DB에서 파일 불러오기
 def get_file_from_db():
+    conn = cx_Oracle.connect(os.environ.get('db_path'))
+    cur = conn.cursor()
+    cur.execute(
+        "Select MSIS_SNSR_ID, SNSR_MSMN_GTHR_DTTM, IMG_FLNM, IMG_PATH_NM from T_AFMG_IMG_GTHR01L1 WHERE RFLC_YN='N'")
+    for result in cur:
+        cur_id, cur_time, filename, path = result
+        cur.execute("Insert into T_AFMG_DATA_ANALY01L1 (MSIS_SNSR_ID, JOB_STRT_DTTM, FSTTM_RGSR_ID,FSTTM_RGST_DTTM,LSTTM_MODFR_ID,LSTTM_ALTR_DTTM) value (" + str(cur_id) + ", " + str(cur_time) + ", ‘FST_USER01’, sysDATE, ‘FST_USER_01’, sysDATE )")
+        result = get_distance(os.path.join(path, filename))
+        cur.execute("Insert into T_AFMG_IMG_ANALY01L1 (MSIS_SNSR_ID, SNSR_MSMN_GTHR_DTTM, ATTFL_CRET_DTTM,SNSR_MSMN_VAL, FSTTM_RGSR_ID,FSTTM_RGST_DTTM,LSTTM_MODFR_ID,LSTTM_ALTR_DTTM value ( ‘MSIS_SNSR_ID’, ‘SNSR_MSMN_GTHR_DTTM’, sysDATE, " + str(result) + ", ‘FST_USER_01’, sysDATE, ‘FST_USER_01’, sysDATE )")
+        cur.execute("Update T_AFMG_DATA_ANALY01L1 set SUCS_YN =“Y”, LSTTM_MODFR_ID=“FST_USER01”,LSTTM_ALTR_DTTM= sysDATE) where MSIS_SNSR_ID=" + str(cur_id) + " and  JOB_STRT_DTTM =" + str(cur_time))
+    cur.close()
+    conn.close()
     pass
     # logger.info(os.environ.get('db_path'))
-    # conn = cx_Oracle.connect(os.environ.get('db_path'))
-    # cur = conn.cursor()
-    # cur.execute("SELECT * from T_AFMG_IMG_GTHR01L1 WHERE RFLC_YN='N'")
-    # for result in cur:
-    #     print(result)
-    # cur.close()
-    # conn.close()
 
 
 # 이미지 내 원 인식
@@ -74,8 +80,7 @@ def find_circle(image, x_start, y_start):
 
 
 # 거리 계산하기
-def get_distance():
-    file_url = os.path.join(os.getcwd(), os.environ.get('file_url'))
+def get_distance(file_url):
     reference_distance = os.environ.get('reference_distance')
     x1_start = int(os.environ.get('x1_start'))
     x1_end = int(os.environ.get('x1_end'))
@@ -118,6 +123,7 @@ def get_distance():
         delta = np.vdot(v1, v2) / (np.linalg.norm(v1))  # get distance between point 1 and point 2
         result = delta / np.linalg.norm(v1)  # ratio of the current distance to the reference distance
         logger.info('Start. input_img. Analysis. [' + str(result) + '] output_img. End. -- OK.')
+        return result
 
 
 def set_log():
@@ -143,7 +149,6 @@ if __name__ == '__main__':
     logger = set_log()
     initial_setting()
     get_file_from_db()
-    get_distance()
     logger.info('===========================')
     # 스케줄 실행
     # scheduler = BlockingScheduler()
