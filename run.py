@@ -1,5 +1,7 @@
 import os
-import glob
+import sys
+import logging
+import logging.handlers
 from datetime import datetime
 
 from apscheduler.schedulers.blocking import BlockingScheduler
@@ -13,12 +15,15 @@ from skimage.color import rgb2gray
 # 환경설정
 def initial_setting():
     if os.path.exists('setting.env'):
-        print('Importing environment from setting.env...')
+        # logger.info('Importing environment from setting.env...')
         for line in open('setting.env'):
             var = line.strip().split('=')
             if len(var) == 2:
                 os.environ[var[0]] = var[1]
                 # print(var[0], '=', var[1])
+    else:
+        logger.error('Start. No setting.env Err!-- NOK.')
+        sys.exit(1)
 
 
 # 최근 파일 불러오기
@@ -78,7 +83,8 @@ def get_distance():
     # 모든 변수가 있는지 확인
     if any(v is None for v in [file_url, reference_distance, x1_start, x1_end, y1_start, y1_end, x2_start,
                                x2_end, y2_start, y2_end, x3_start, x3_end, y3_start, y3_end]):
-        print('Some variable is none, please check setting.env')
+        logger.error('Start. Initial_Setting Variable Err!-- NOK.')
+        sys.exit(1)
     else:
         # get images and pre-processing
         # 이미지를 불러온뒤 전처리
@@ -87,24 +93,51 @@ def get_distance():
         image_3 = io.imread(file_url)[x3_start:x3_end, y3_start:y3_end]
         # find circles and get center of the circles
         # 원과 원의 중심 찾기
-        yc1, xc1 = find_circle(image_1, x_start=x1_start, y_start=y1_start)
-        yc2, xc2 = find_circle(image_2, x_start=x2_start, y_start=y2_start)
-        yc3, xc3 = find_circle(image_3, x_start=x3_start, y_start=y3_start,)
+        try:
+            yc1, xc1 = find_circle(image_1, x_start=x1_start, y_start=y1_start)
+            yc2, xc2 = find_circle(image_2, x_start=x2_start, y_start=y2_start)
+            yc3, xc3 = find_circle(image_3, x_start=x3_start, y_start=y3_start)
+        except:
+            logger.error('Start. input_img. Analysis. Analysis Err! -- NOK.')
+            sys.exit(1)
         # calculate distance
         # 거리 계산
         v1 = np.array([yc2, xc2]) - np.array([yc1, xc1])  # vector form point 1 to point 2
         v2 = np.array([yc3, xc3]) - np.array([yc1, xc1])  # vector form point 1 to point 3
         delta = np.vdot(v1, v2) / (np.linalg.norm(v1))  # get distance between point 1 and point 2
         result = delta / np.linalg.norm(v1)  # ratio of the current distance to the reference distance
-        print(datetime.now(), 'The result is', result)
+        logger.info('Start. input_img. Analysis. [' + str(result) + '] output_img. End. -- OK.')
+
+
+def set_log():
+    # 로그 설정
+    set_logger = logging.getLogger('logger')
+    # 포매터 생성
+    formatter = logging.Formatter('[%(levelname)s|%(filename)s:%(lineno)s] %(asctime)s > %(message)s')
+    # 스트림과 파일로 로그 출력하는 핸들러
+    file_max_byte = 1024 * 1024 * 100  # 100MB
+    file_handler = logging.handlers.RotatingFileHandler('./logger.log', maxBytes=file_max_byte, backupCount=10)
+    stream_handler = logging.StreamHandler()
+    # 핸들러에 포매터 지정
+    file_handler.setFormatter(formatter)
+    stream_handler.setFormatter(formatter)
+    # 로거 인스턴스에 스티림 핸들러와 파일 핸들러 추가
+    set_logger.addHandler(file_handler)
+    set_logger.addHandler(stream_handler)
+    set_logger.setLevel(logging.DEBUG)
+    return set_logger
 
 
 if __name__ == '__main__':
-    scheduler = BlockingScheduler()
-    scheduler.add_job(get_distance, 'interval', seconds=30, next_run_time=datetime.now())
-    print('Press Ctrl+{0} to exit'.format('Break' if os.name == 'nt' else 'C'))
-
-    try:
-        scheduler.start()
-    except (KeyboardInterrupt, SystemExit):
-        pass
+    logger = set_log()
+    get_distance()
+    logger.info('===========================')
+    # 스케줄 실행
+    # scheduler = BlockingScheduler()
+    # scheduler.add_job(get_distance, 'interval', seconds=60, next_run_time=datetime.now())
+    # print('Press Ctrl+{0} to exit'.format('Break' if os.name == 'nt' else 'C'))
+    #
+    # try:
+    #     scheduler.start()
+    # except (KeyboardInterrupt, SystemExit):
+    #     pass
