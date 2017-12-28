@@ -42,21 +42,20 @@ def initial_setting():
 def get_file_from_db():
     conn = cx_Oracle.connect(os.environ.get('db_path'))
     cur = conn.cursor()
-    cur.execute(
-        "Select MSMN_SEQ, MSIS_SNSR_ID, MSMN_GTHR_YEAR, MSMN_GTHR_MNTH, MSMN_GTHR_DAY, MSMN_GTHR_HH, MSMN_GTHR_MM, MSMN_GTHR_SS, IMG_FLNM, IMG_PATH_NM from T_AFMG_IMG_GTHR01L1 where RFLC_YN=‘N’ ")
+    cur.execute(os.environ.get('query_1'))
     for result in cur:
         cur_seq, cur_id, cur_year, cur_month, cur_day, cur_hour, cur_minute, cur_second, cur_filename, cur_path = result
-        sql = "Insert into T_AFMG_DATA_ANALY01L1 (MSIS_SNSR_ID, JOB_STRT_DTTM, FSTTM_RGSR_ID,FSTTM_RGST_DTTM,LSTTM_MODFR_ID,LSTTM_ALTR_DTTM) values (:1, :2, 'USER', sysDATE, 'USER', sysDATE )"
-        cur.execute(sql, (cur_id, cur_time))
-        result = get_distance(os.path.join(path, filename))
-        sql = "Insert into T_AFMG_IMG_ANLY01L1 (MSMN_SEQ,MSIS_SNSR_ID, MSMN_INSP_YEAR, MSMN_INSP_MNTH, MSMN_INSP_DAY, MSMN_INSP_HH, MSMN_INSP_MM, MSMN_INSP_SS, SNSR_MSMN_VAL, FSTTM_RGSR_ID,FSTTM_RGST_DTTM,LSTTM_MODFR_ID,LSTTM_ALTR_DTTM) values (:1,:2,:3,:4,:5,:6,:7,:8,:9,'USER',sysDATE,'USER', sysDATE"
-        cur.execute(sql, (cur_seq, cur_id, cur_year, cur_month, cur_day, cur_hour, cur_minute, cur_second, result))
-        sql = "Update T_AFMG_DATA_ANALY01L1 set SUCS_YN =“Y”, LSTTM_MODFR_ID=“FST_USER01”,LSTTM_ALTR_DTTM= sysDATE) where MSIS_SNSR_ID=:1 and  JOB_STRT_DTTM =:2"
-        cur.execute(sql, (cur_id, cur_time))
+        query_2 = os.environ.get('query_2')
+        cur.execute(query_2, cur_id=cur_id)
+        result = int(round(get_distance(os.path.join(cur_path, cur_filename))*20), 5)
+        query_3 = os.environ.get('query_3')
+        cur.execute(query_3, seq_id=cur_seq, sn_id=cur_id, year=cur_year, month=cur_month, day=cur_day, hour=cur_hour,
+                    min=cur_minute, sec=cur_second, val=result)
+        query_4 = os.environ.get('query_4')
+        cur.execute(query_4, seq_id=cur_id, sn_id=cur_id)
     cur.close()
     conn.close()
     pass
-    # logger.info(os.environ.get('db_path'))
 
 
 # 이미지 내 원 인식
