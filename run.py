@@ -2,9 +2,7 @@ import os
 import sys
 import logging
 import logging.handlers
-from datetime import datetime
 
-from apscheduler.schedulers.blocking import BlockingScheduler
 import numpy as np
 import cx_Oracle
 from skimage import io
@@ -16,26 +14,13 @@ from skimage.color import rgb2gray
 # 환경설정
 def initial_setting():
     if os.path.exists('setting.env'):
-        # logger.info('Importing environment from setting.env...')
         for line in open('setting.env'):
             var = line.strip().split('=')
             if len(var) == 2:
                 os.environ[var[0]] = var[1]
-                # print(var[0], '=', var[1])
     else:
         logger.error('Start. No setting.env Err!-- NOK.')
         sys.exit(1)
-
-
-# 최근 파일 불러오기
-# def get_latest_file(file_url):
-#     list_of_files = glob.glob(file_url)
-#     if not list_of_files:
-#         print('File directory', file_url, 'is empty')
-#         return None
-#     else:
-#         latest_file = max(list_of_files, key=os.path.getctime)
-#         return latest_file
 
 
 # DB에서 파일 불러오기
@@ -50,7 +35,7 @@ def get_file_from_db():
         result = get_distance(os.path.join(cur_path, cur_filename))
         sql = "Insert into T_AFMG_IMG_ANLY01L1 (MSMN_SEQ,MSIS_SNSR_ID, MSMN_INSP_YEAR, MSMN_INSP_MNTH, MSMN_INSP_DAY, MSMN_INSP_HH, MSMN_INSP_MM, MSMN_INSP_SS, SNSR_MSMN_VAL, FSTTM_RGSR_ID,FSTTM_RGST_DTTM,LSTTM_MODFR_ID,LSTTM_ALTR_DTTM) values (:1,:2,:3,:4,:5,:6,:7,:8,:9,'USER',sysDATE,'USER', sysDATE"
         cur.execute(sql, (cur_seq, cur_id, cur_year, cur_month, cur_day, cur_hour, cur_minute, cur_second, result))
-        sql = "Update T_AFMG_DATA_ANLY01L1 set SUCS_YN ='Y', LSTTM_MODFR_ID='FST_USER01',LSTTM_ALTR_DTTM= sysDATE) where MSIS_SNSR_ID=:1 and MSIS_SNSR_ID=:2"
+        sql = "Update T_AFMG_DATA_ANLY01L1 set SUCS_YN ='Y', LSTTM_MODFR_ID='USER',LSTTM_ALTR_DTTM= sysDATE) where MSIS_SNSR_ID=:1 and MSIS_SNSR_ID=:2"
         cur.execute(sql, (cur_seq, cur_id))
     cur.close()
     conn.close()
@@ -152,12 +137,3 @@ if __name__ == '__main__':
     initial_setting()
     get_file_from_db()
     logger.info('===========================')
-    # 스케줄 실행
-    # scheduler = BlockingScheduler()
-    # scheduler.add_job(get_distance, 'interval', seconds=60, next_run_time=datetime.now())
-    # print('Press Ctrl+{0} to exit'.format('Break' if os.name == 'nt' else 'C'))
-    #
-    # try:
-    #     scheduler.start()
-    # except (KeyboardInterrupt, SystemExit):
-    #     pass
