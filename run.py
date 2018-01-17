@@ -1,10 +1,11 @@
+import glob
 import os
 import sys
 import logging
 import logging.handlers
+import csv
 
 import numpy as np
-import cx_Oracle
 from skimage import io
 from skimage.transform import hough_ellipse
 from skimage.feature import canny
@@ -25,22 +26,17 @@ def initial_setting():
 
 # DB에서 파일 불러오기
 def get_file_from_db():
-    conn = cx_Oracle.connect(os.environ.get('db_path'))
-    cur = conn.cursor()
-    cur.execute("Select MSMN_SEQ, MSIS_SNSR_ID, MSMN_GTHR_YEAR, MSMN_GTHR_MNTH, MSMN_GTHR_DAY, MSMN_GTHR_HH, MSMN_GTHR_MM, MSMN_GTHR_SS, IMG_FLNM, IMG_PATH_NM from T_AFMG_IMG_GTHR01L1 where RFLC_YN='N'")
-    for result in cur:
-        cur_seq, cur_id, cur_year, cur_month, cur_day, cur_hour, cur_minute, cur_second, cur_filename, cur_path = result
-        sql = "Insert into T_AFMG_DATA_ANLY01L1 (MSIS_SNSR_ID, JOB_STRT_DTTM, FSTTM_RGSR_ID,FSTTM_RGST_DTTM,LSTTM_MODFR_ID,LSTTM_ALTR_DTTM) values (:1, :2, 'USER', sysDATE, 'USER', sysDATE)"
-        cur.execute(sql, (cur_seq, cur_id))
-        result = get_distance(os.path.join(cur_path, cur_filename))
-        sql = "Insert into T_AFMG_IMG_ANLY01L1 (MSMN_SEQ,MSIS_SNSR_ID, MSMN_INSP_YEAR, MSMN_INSP_MNTH, MSMN_INSP_DAY, MSMN_INSP_HH, MSMN_INSP_MM, MSMN_INSP_SS, SNSR_MSMN_VAL, FSTTM_RGSR_ID,FSTTM_RGST_DTTM,LSTTM_MODFR_ID,LSTTM_ALTR_DTTM) values (:1,:2,:3,:4,:5,:6,:7,:8,:9,'USER',sysDATE,'USER', sysDATE"
-        cur.execute(sql, (cur_seq, cur_id, cur_year, cur_month, cur_day, cur_hour, cur_minute, cur_second, result))
-        sql = "Update T_AFMG_DATA_ANLY01L1 set SUCS_YN ='Y', LSTTM_MODFR_ID='USER',LSTTM_ALTR_DTTM= sysDATE) where MSIS_SNSR_ID=:1 and MSIS_SNSR_ID=:2"
-        cur.execute(sql, (cur_seq, cur_id))
-    cur.close()
-    conn.close()
-    pass
-    # logger.info(os.environ.get('db_path'))
+    cur_path = os.getcwd()
+    with open('output.csv', 'a', encoding='utf-8') as csvfile:
+        writer = csv.writer(csvfile, delimiter=',')
+        writer.writerow(['image', 'result'])
+        for image in glob.glob('./data/*.jpg'):
+            file_url = os.path.join(cur_path, image[2:])
+            result = get_distance(file_url)
+            image_data = str(image)
+            result_data = str(result)
+            writer.writerow([image_data, result_data])
+            print(image_data, result_data)
 
 
 # 이미지 내 원 인식
@@ -102,15 +98,15 @@ def get_distance(file_url):
             yc3, xc3 = find_circle(image_3, x_start=x3_start, y_start=y3_start)
         except:
             logger.error('Start. input_img. Analysis. Analysis Err! -- NOK.')
-            sys.exit(1)
+            return 'Analysis Err!'
         # calculate distance
         # 거리 계산
         v1 = np.array([yc2, xc2]) - np.array([yc1, xc1])  # vector form point 1 to point 2
         v2 = np.array([yc3, xc3]) - np.array([yc1, xc1])  # vector form point 1 to point 3
         delta = np.vdot(v1, v2) / (np.linalg.norm(v1))  # get distance between point 1 and point 2
-        result = delta / np.linalg.norm(v1)  # ratio of the current distance to the reference distance
+        result = delta / np.linalg.norm(v1) - 0.5  # ratio of the current distance to the reference distance
         logger.info('Start. input_img. Analysis. [' + str(result) + '] output_img. End. -- OK.')
-        return result
+        return result * 320
 
 
 def set_log():
