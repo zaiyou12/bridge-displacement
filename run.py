@@ -101,10 +101,10 @@ def get_distance(file_url):
             return 'Analysis Err!'
         # calculate distance
         # 거리 계산
-        v1 = np.array([yc2, xc2]) - np.array([yc1, xc1])  # vector form point 1 to point 2
-        v2 = np.array([yc3, xc3]) - np.array([yc1, xc1])  # vector form point 1 to point 3
+        v1 = np.array([yc2+25, -xc2]) - np.array([yc1, -xc1])  # vector form point 1 to point 2
+        v2 = np.array([yc3+25, -xc3]) - np.array([yc1, -xc1])  # vector form point 1 to point 3
         delta = np.vdot(v1, v2) / (np.linalg.norm(v1))  # get distance between point 1 and point 2
-        result = delta / np.linalg.norm(v1) - 0.5  # ratio of the current distance to the reference distance
+        result = (delta / np.linalg.norm(v1)) - 0.5  # ratio of the current distance to the reference distance
         logger.info('Start. input_img. Analysis. [' + str(result) + '] output_img. End. -- OK.')
         return result * 320
 
