@@ -84,6 +84,86 @@ def get_distance():
         ax.add_patch(rect3)
         plt.show()
 
+# DB에서 파일 불러오기
+def get_file_from_db():
+    conn = cx_Oracle.connect(os.environ.get('db_path'))
+    cur = conn.cursor()
+    sql = """
+        Select 
+        MSMN_SEQ,
+        MSIS_SNSR_ID,
+        MSMN_GTHR_YEAR,
+        MSMN_GTHR_MNTH,
+        MSMN_GTHR_DAY,
+        MSMN_GTHR_HH,
+        MSMN_GTHR_MM,
+        MSMN_GTHR_SS,
+        IMG_FLNM,
+        IMG_PATH,
+        FSTTM_RGSR_ID,
+        FSTTM_RGST_DTTM,
+        LSTTM_MODFR_ID,
+        LSTTM_ALTR_DTTM 
+        from T_AFMG_IMG_GTHR01L1 
+        where RFLC_YN='N'
+    """
+    cur.execute(sql)
+    for result in cur:
+        cur_seq = result[0]
+        cur_id = result[1]
+        cur_year = result[2]
+        cur_mnth = result[3]
+        cur_day = result[4]
+        cur_hh = result[5]
+        cur_mm = result[6]
+        cur_ss = result[7]
+        cur_filename = result[8]
+        cur_path = result[9]
+        cur_fid = result[10]
+        cur_fdt = result[11]
+        cur_lid = result[12]
+        cur_ldt = result[13]
+        sql = """
+            Insert into T_AFMG_DATA_ANLY01L1 
+            (MSIS_SNSR_ID, 
+            JOB_STRT_DTTM,
+            FSTTM_RGSR_ID,
+            FSTTM_RGST_DTTM,
+            LSTTM_MODFR_ID,
+            LSTTM_ALTR_DTTM)
+            Values
+            (:1, sysDATE,'b', sysDATE,'c',sysDATE)
+        """
+        cur.execute(sql, cur_id)
+        result = get_distance(os.path.join(cur_path, cur_filename))
+        sql = """
+            Insert into T_AFMG_IMG_ANLY01L1
+            (MSMN_SEQ,
+            MSIS_SNSR_ID,
+            MSMN_GTHR_YEAR,
+            MSMN_GTHR_MNTH,
+            MSMN_GTHR_DAY,
+            MSMN_GTHR_HH,
+            MSMN_GTHR_MM,
+            MSMN_GTHR_SS,
+            SNSR_MSMN_VAL,
+            FSTTM_RGSR_ID,
+            FSTTM_RGST_DTTM,
+            LSTTM_MODFR_ID,
+            LSTTM_ALTR_DTTM)
+            values
+            (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+        """
+        cur.execute(sql, (cur_seq,cur_id,cur_year,cur_mnth,cur_day,cur_hh,cur_mm,cur_ss,result,cur_fid,cur_fdt,cur_lid,cur_ldt))
+        sql = """
+            Update T_AFMG_DATA_ANLY01L1 
+            set SUCS_YN ='Y'
+            where MSIS_SNSR_ID=%s and JOB_STRT_DTTM =%s
+        """
+        cur.execute(sql, (cur_id, cur_fdt))
+    cur.close()
+    conn.close()
+
 
 if __name__ == '__main__':
     get_distance()

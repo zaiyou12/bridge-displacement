@@ -1,11 +1,12 @@
-import glob
+# import glob
 import os
 import sys
 import logging
 import logging.handlers
-import csv
+# import csv
 
 import numpy as np
+import cx_Oracle
 from skimage import io
 from skimage.transform import hough_ellipse
 from skimage.feature import canny
@@ -26,6 +27,25 @@ def initial_setting():
 
 # DB에서 파일 불러오기
 def get_file_from_db():
+    db_path = os.environ.get('db_path')
+    sql_1 = os.environ.get('sql_1')
+    sql_2 = os.environ.get('sql_2')
+    sql_3 = os.environ.get('sql_3')
+    if any(v is None for v in [db_path, sql_1, sql_2, sql_3]):
+        logger.error('Start. Initial_Setting Variable Err!-- NOK.')
+        sys.exit(1)
+    conn = cx_Oracle.connect(os.environ.get('db_path'))
+    cur = conn.cursor()
+    cur.execute(sql_1)
+    for result in cur:
+        MSMN_SEQ, MSIS_SNSR_ID, _, _, _, _, _, _, _, _, IMG_FLNM, IMG_PATH_NM, _, FSTTM_RGSR_ID, FSTTM_RGST_DTTM, _, _ = result
+        result = get_distance(IMG_FLNM + IMG_PATH_NM)
+        cur.execute(sql_2, (MSMN_SEQ, MSIS_SNSR_ID, result, FSTTM_RGSR_ID, FSTTM_RGST_DTTM))
+        cur.execute(sql_3, (MSMN_SEQ, MSIS_SNSR_ID))
+    cur.close()
+    conn.close()
+
+    """ 자체 폴더에서 불러올시 사용
     cur_path = os.getcwd()
     with open('output.csv', 'a', encoding='utf-8') as csvfile:
         writer = csv.writer(csvfile, delimiter=',')
@@ -36,7 +56,8 @@ def get_file_from_db():
             image_data = str(image)
             result_data = str(result)
             writer.writerow([image_data, result_data])
-            print(image_data, result_data)
+            print(image_data, result_data) 
+    """
 
 
 # 이미지 내 원 인식

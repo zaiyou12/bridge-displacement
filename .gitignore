@@ -204,3 +204,5 @@ Temporary Items
 .idea/
 .vscode/
 venv/*
+data/*.jpg
+output.csv
